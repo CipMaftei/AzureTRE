@@ -1,12 +1,24 @@
-# See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.166.1/containers/python-3/.devcontainer/base.Dockerfile
-
-# [Choice] Python version: 3, 3.9, 3.8, 3.7, 3.6
-ARG VARIANT="3.8"
-FROM mcr.microsoft.com/vscode/devcontainers/python:dev-${VARIANT}-buster
-
 # This will be set to true when running in VSCode
 ARG INTERACTIVE="false"
 
+
+# See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.166.1/containers/python-3/.devcontainer/base.Dockerfile
+# [Choice] Python version: 3, 3.9, 3.8, 3.7, 3.6
+ARG VARIANT="3.8"
+FROM mcr.microsoft.com/vscode/devcontainers/python:dev-${VARIANT}-buster as tre-base-interactive-true
+
+
+FROM mcr.microsoft.com/vscode/devcontainers/base:buster as tre-base-interactive-false
+
+# Install make
+RUN apt-get update && sudo apt-get install -y make \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+
+FROM tre-base-interactive-${INTERACTIVE} as tre-base
+
+
+ARG INTERACTIVE
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
@@ -44,11 +56,11 @@ RUN apt-get update && sudo apt-get install -y apt-transport-https ca-certificate
 RUN if [ "${INTERACTIVE}" = "true" ]; then curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash; fi
 
 # Install Certbot
-RUN apt-get update && apt-get install -y python3 python3-venv libaugeas0 \
-    && python3 -m venv /opt/certbot/ \
-    && /opt/certbot/bin/pip install --no-cache-dir --upgrade pip \
-    && /opt/certbot/bin/pip install --no-cache-dir certbot \
-    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+# RUN apt-get update && apt-get install -y python3 python3-venv libaugeas0 \
+#     && python3 -m venv /opt/certbot/ \
+#     && /opt/certbot/bin/pip install --no-cache-dir --upgrade pip \
+#     && /opt/certbot/bin/pip install --no-cache-dir certbot \
+#     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Install Porter
 # Not using the script from https://cdn.porter.sh/latest/install-linux.sh
@@ -76,7 +88,8 @@ COPY ["api_app/requirements.txt", "api_app/requirements-dev.txt", "/tmp/pip-tmp/
 COPY ["resource_processor/vmss_porter/requirements.txt", "/tmp/pip-tmp/resource_processor/vmss_porter/" ]
 COPY ["docs/requirements.txt", "/tmp/pip-tmp/docs/"]
 COPY ["e2e_tests/requirements.txt", "/tmp/pip-tmp/e2e_tests/"]
-RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirements.txt && rm -rf /tmp/pip-tmp
+RUN if [ "${INTERACTIVE}" = "true" ]; then pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirements.txt; fi \
+    && rm -rf /tmp/pip-tmp
 
 # Install azure-cli
 COPY ./.devcontainer/scripts/azure-cli.sh /tmp/

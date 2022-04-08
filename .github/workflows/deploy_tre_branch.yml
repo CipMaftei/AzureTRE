@@ -7,6 +7,7 @@ name: Deploy Azure TRE (branch)
 # to workflows run from forks
 
 on:  # yamllint disable-line rule:truthy
+  push:
   workflow_dispatch:
     inputs:
       runExtendedTests:

@@ -310,8 +310,12 @@ static-web-upload:
 
 test-e2e-smoke:
 	$(call target_title, "Running E2E smoke tests") && \
-	cd e2e_tests && \
-	python -m pytest -m smoke --verify $${IS_API_SECURED:-true} --junit-xml pytest_e2e_smoke.xml
+	cd e2e_tests \
+	&& docker build -f Dockerfile -t e2e . \
+	&& docker run --name e2e -e TEST_CATEGORY=smoke -e IS_API_SECURED=$${IS_API_SECURED:-true} e2e \
+	&& docker cp e2e:/test-results . \
+	&& docker rm e2e \
+	&& if [ -f test-results/pytest_e2e_smoke_failed ]; then exit 1; fi
 
 test-e2e-extended:
 	$(call target_title, "Running E2E extended tests") && \
