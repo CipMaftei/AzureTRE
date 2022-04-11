@@ -24,6 +24,9 @@ def verify(pytestconfig):
 @pytest.fixture
 async def admin_token(verify) -> str:
     async with AsyncClient(verify=verify) as client:
+        assert config.API_CLIENT_ID != "", "API_CLIENT_ID cannot be empty."
+        assert config.AAD_TENANT_ID != "", "AAD_TENANT_ID cannot be empty."
+
         responseJson = ""
         headers = {'Content-Type': "application/x-www-form-urlencoded"}
         if config.TEST_ACCOUNT_CLIENT_ID != "" and config.TEST_ACCOUNT_CLIENT_SECRET != "":
@@ -31,10 +34,13 @@ async def admin_token(verify) -> str:
             payload = f"grant_type=client_credentials&client_id={config.TEST_ACCOUNT_CLIENT_ID}&client_secret={config.TEST_ACCOUNT_CLIENT_SECRET}&scope=api://{config.API_CLIENT_ID}/.default"
             url = f"https://login.microsoftonline.com/{config.AAD_TENANT_ID}/oauth2/v2.0/token"
 
-        else:
+        elif config.TEST_USER_NAME != "" and config.TEST_USER_PASSWORD != "":
             # Use Resource Owner Password Credentials flow
             payload = f"grant_type=password&resource={config.API_CLIENT_ID}&username={config.TEST_USER_NAME}&password={config.TEST_USER_PASSWORD}&scope=api://{config.API_CLIENT_ID}/user_impersonation&client_id={config.TEST_APP_ID}"
             url = f"https://login.microsoftonline.com/{config.AAD_TENANT_ID}/oauth2/token"
+
+        else:
+            assert False, "Missing configuration to request an access token."
 
         response = await client.post(url, headers=headers, content=payload)
         try:
