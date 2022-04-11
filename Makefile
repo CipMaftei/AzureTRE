@@ -309,18 +309,24 @@ static-web-upload:
 	&& ./templates/core/terraform/scripts/upload_static_web.sh
 
 test-e2e-smoke:
-	$(call target_title, "Running E2E smoke tests") && \
-	cd e2e_tests \
+	$(call target_title, "Running E2E smoke tests") \
+	&& cd e2e_tests \
 	&& docker build -f Dockerfile -t e2e . \
+	&& docker rm e2e || true \
 	&& docker run --name e2e -e TEST_CATEGORY=smoke -e IS_API_SECURED=$${IS_API_SECURED:-true} e2e \
-	&& docker cp e2e:/test-results . \
+	&& docker cp e2e:/test-results/. . \
 	&& docker rm e2e \
-	&& if [ -f test-results/pytest_e2e_smoke_failed ]; then exit 1; fi
+	&& if [ -f pytest_e2e_smoke_failed ]; then exit 1; fi
 
 test-e2e-extended:
-	$(call target_title, "Running E2E extended tests") && \
-	cd e2e_tests && \
-	python -m pytest -m extended --verify $${IS_API_SECURED:-true} --junit-xml pytest_e2e_extended.xml
+	$(call target_title, "Running E2E extended tests") \
+	&& cd e2e_tests \
+	&& docker build -f Dockerfile -t e2e . \
+	&& docker rm e2e || true \
+	&& docker run --name e2e -e TEST_CATEGORY=extended -e IS_API_SECURED=$${IS_API_SECURED:-true} e2e \
+	&& docker cp e2e:/test-results/. . \
+	&& docker rm e2e \
+	&& if [ -f pytest_e2e_extended_failed ]; then exit 1; fi
 
 setup-local-debugging:
 	$(call target_title,"Setting up the ability to debug the API and Resource Processor") \
