@@ -1,0 +1,15 @@
+---
+name: Test e2e
+
+on:  # yamllint disable-line rule:truthy
+  # workflow_call:
+  workflow_dispatch:
+
+jobs:
+  e2e_tests-smoke:
+    name: "Run E2E Tests (Smoke)"
+    runs-on: ubuntu-latest
+    environment: CICD
+    steps:
+      - name: |
+          echo ${{ secrets.ACTIONS_ACR_NAME }}
